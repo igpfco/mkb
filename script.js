@@ -142,15 +142,16 @@ function addBoard() {
 // Изменяем функцию получения досок
 function getBoards() {
     if (!currentUser) {
-        console.error('Пользователь не авторизован');
+        console.error('Пользователь не авторизован при попытке получения досок');
         return {};
     }
     
     const userId = currentUser.id;
     try {
-        // Используем userId как часть ключа для хранения
         const userBoards = localStorage.getItem(`kanban_boards_${userId}`);
-        return userBoards ? JSON.parse(userBoards) : {};
+        const boards = userBoards ? JSON.parse(userBoards) : {};
+        console.log(`Получены доски для пользователя ${userId}:`, boards);
+        return boards;
     } catch (error) {
         console.error('Ошибка при получении досок:', error);
         return {};
@@ -713,31 +714,46 @@ function saveTaskEdit() {
 
 // Инициализация Telegram Web App
 function initTelegramApp() {
-    telegramWebApp = window.Telegram.WebApp;
-    telegramWebApp.ready();
-    currentUser = telegramWebApp.initDataUnsafe.user;
-    
-    if (!currentUser) {
-        alert('Ошибка авторизации в Telegram');
-        return;
+    try {
+        telegramWebApp = window.Telegram.WebApp;
+        telegramWebApp.ready();
+        
+        // Проверяем, есть ли данные пользователя
+        if (telegramWebApp.initDataUnsafe && telegramWebApp.initDataUnsafe.user) {
+            currentUser = telegramWebApp.initDataUnsafe.user;
+            console.log('Пользователь авторизован:', currentUser);
+        } else {
+            // Если нет данных из Telegram, создаем временного пользователя для тестирования
+            currentUser = {
+                id: 'test_user_' + Date.now(),
+                first_name: 'Тестовый пользователь'
+            };
+            console.log('Создан тестовый пользователь:', currentUser);
+        }
+        
+        loadUserBoards();
+    } catch (error) {
+        console.error('Ошибка при инициализации:', error);
+        // Создаем временного пользователя в случае ошибки
+        currentUser = {
+            id: 'test_user_' + Date.now(),
+            first_name: 'Тестовый пользователь'
+        };
+        loadUserBoards();
     }
-    
-    console.log('Инициализация для пользователя:', currentUser.id);
-    clearCurrentBoardData();
-    loadUserBoards();
 }
 
 // Изменяем функцию сохранения досок
 function saveBoards(boards) {
     if (!currentUser) {
-        console.error('Пользователь не авторизован');
+        console.error('Пользователь не авторизован при попытке сохранения досок');
         return;
     }
     
     const userId = currentUser.id;
     try {
-        // Сохраняем доски с уникальным ключом для каждого пользователя
         localStorage.setItem(`kanban_boards_${userId}`, JSON.stringify(boards));
+        console.log(`Сохранены доски для пользователя ${userId}:`, boards);
     } catch (error) {
         console.error('Ошибка при сохранении досок:', error);
     }
@@ -773,24 +789,28 @@ function createDefaultBoard() {
 
 // Обновляем функцию loadUserBoards
 function loadUserBoards() {
-    if (!currentUser) {
-        console.error('Пользователь не авторизован');
-        return;
-    }
-
-    let boards = getBoards();
+    console.log('Загрузка досок для пользователя:', currentUser);
     
-    // Если у пользователя нет досок, создаем доску по умолчанию
+    let boards = getBoards();
+    console.log('Текущие доски:', boards);
+
+    // Если досок нет, создаем доску по умолчанию
     if (Object.keys(boards).length === 0) {
+        console.log('Создание доски по умолчанию...');
         const defaultBoardId = createDefaultBoard();
         boards = getBoards();
         currentBoardId = defaultBoardId;
+        console.log('Создана доска по умолчанию:', defaultBoardId);
     }
 
     updateBoardSelect();
-    
+
     // Если есть текущая доска, отображаем её
     if (currentBoardId && boards[currentBoardId]) {
+        displayBoard(currentBoardId);
+    } else if (Object.keys(boards).length > 0) {
+        // Если нет текущей доски, но есть другие доски, отображаем первую
+        currentBoardId = Object.keys(boards)[0];
         displayBoard(currentBoardId);
     }
 }
@@ -826,18 +846,18 @@ function clearCurrentBoardData() {
 
 // Исправляем функцию createBoard
 async function createBoard() {
-    if (!currentUser) {
-        alert('Необходимо авторизоваться');
-        return;
-    }
+    console.log('Создание новой доски для пользователя:', currentUser);
 
     const boardName = prompt('Введите название доски:');
-    if (!boardName) return;
+    if (!boardName) {
+        console.log('Создание доски отменено пользователем');
+        return;
+    }
 
     const boardId = 'board-' + Date.now();
     const boards = getBoards();
     
-    boards[boardId] = {
+    const newBoard = {
         id: boardId,
         name: boardName,
         owner: currentUser.id,
@@ -856,11 +876,13 @@ async function createBoard() {
             }
         ]
     };
+
+    boards[boardId] = newBoard;
+    console.log('Создана новая доска:', newBoard);
     
     saveBoards(boards);
     updateBoardSelect();
     
-    // Устанавливаем новую доску как текущую и отображаем её
     currentBoardId = boardId;
     displayBoard(boardId);
 }
