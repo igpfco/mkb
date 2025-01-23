@@ -58,6 +58,91 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadLastBoard();
 });
 
+// Проверяем поддержку Drag and Drop и включаем альтернативный режим если нужно
+const isDragAndDropSupported = 'draggable' in document.createElement('div');
+
+if (!isDragAndDropSupported) {
+    // Альтернативная реализация перемещения карточек
+    function enableTouchControls() {
+        const tasks = document.querySelectorAll('.task');
+        tasks.forEach(task => {
+            task.addEventListener('click', function() {
+                const currentColumn = this.closest('.column');
+                const columns = document.querySelectorAll('.column');
+                
+                // Показываем диалог выбора колонки
+                const columnNames = Array.from(columns).map(col => {
+                    const title = col.querySelector('h2').textContent;
+                    return { title, id: col.id };
+                });
+                
+                const select = document.createElement('select');
+                columnNames.forEach(col => {
+                    const option = document.createElement('option');
+                    option.value = col.id;
+                    option.text = col.title;
+                    if (col.id === currentColumn.id) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+                
+                const dialog = document.createElement('div');
+                dialog.className = 'move-dialog';
+                dialog.innerHTML = `
+                    <h3>Переместить в колонку:</h3>
+                    ${select.outerHTML}
+                    <button onclick="moveTask('${task.id}', this.previousElementSibling.value)">Переместить</button>
+                `;
+                
+                document.body.appendChild(dialog);
+            });
+        });
+    }
+    
+    function moveTask(taskId, columnId) {
+        const task = document.getElementById(taskId);
+        const targetColumn = document.querySelector(`#${columnId} .tasks`);
+        targetColumn.appendChild(task);
+        document.querySelector('.move-dialog').remove();
+        saveTasks();
+    }
+    
+    // Добавляем стили для диалога
+    const style = document.createElement('style');
+    style.textContent = `
+        .move-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .move-dialog select {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 8px;
+        }
+        
+        .move-dialog button {
+            width: 100%;
+            padding: 8px;
+            background: #0079bf;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 // Функции для drag and drop
 function allowDrop(ev) {
     ev.preventDefault();
@@ -849,13 +934,17 @@ function renderBoard(board) {
     });
 
     loadBoardTasks(board.tasks);
+
+    if (!isDragAndDropSupported) {
+        enableTouchControls();
+    }
 }
 
 function checkBrowserSupport() {
     const requirements = {
         indexedDB: !!window.indexedDB,
         localStorage: !!window.localStorage,
-        dragAndDrop: typeof(HTMLElement.prototype.dragstart) !== 'undefined',
+        dragAndDrop: 'draggable' in document.createElement('div'),
         webCrypto: !!window.crypto?.subtle
     };
 
