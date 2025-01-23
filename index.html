@@ -10,12 +10,12 @@
 </head>
 <body>
     <div class="menu">
-        <button onclick="showBoardForm()" class="board-btn">+ Новая доска</button>
+        <button id="create-board-btn" class="new-board-btn">+ Новая доска</button>
         <button onclick="deleteBoardConfirm()" class="delete-board-btn">Удалить доску</button>
         <button onclick="showForm()" class="add-btn">+ Добавить карточку</button>
         <button onclick="showColumnForm()" class="add-column-btn">+ Добавить столбец</button>
-        <select id="board-select" onchange="switchBoard(this.value)">
-            <!-- Список досок будет добавлен динамически -->
+        <select id="board-select">
+            <option value="">Выберите доску</option>
         </select>
     </div>
 
@@ -24,7 +24,7 @@
         <div class="modal-content">
             <h3>Новая доска</h3>
             <input type="text" id="board-title" placeholder="Название доски">
-            <button onclick="addBoard()">Создать</button>
+            <button id="create-board-btn">Создать</button>
             <button onclick="closeBoardForm()">Отмена</button>
         </div>
     </div>

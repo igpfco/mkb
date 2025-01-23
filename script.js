@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadBoards();
     loadLastBoard();
     initTelegramApp();
+    initApp();
 });
 
 // Функция сохранения файла в IndexedDB
@@ -109,34 +110,58 @@ function closeBoardForm() {
     document.getElementById('board-title').value = '';
 }
 
-// Модифицируем функцию addBoard
-function addBoard() {
-    const title = document.getElementById('board-title').value.trim();
-    if (!title) return;
+// Изменяем функцию addBoard
+async function createBoard() {
+    console.log('Вызвана функция createBoard');
+    
+    if (!currentUser) {
+        console.error('Пользователь не авторизован');
+        return;
+    }
 
-    const boards = getBoards();
-    const boardId = 'board-' + Date.now();
-    
-    // Создаем новую доску со стандартными столбцами
-    boards[boardId] = {
-        title: title,
-        columns: [...DEFAULT_COLUMNS], // Копируем стандартные столбцы
-        tasks: {
-            'todo': [],
-            'in-progress': [],
-            'done': []
-        }
-    };
+    const boardName = prompt('Введите название доски:');
+    if (!boardName || boardName.trim() === '') {
+        return;
+    }
 
-    localStorage.setItem('kanbanBoards', JSON.stringify(boards));
-    localStorage.setItem('lastBoardId', boardId);
-    
-    closeBoardForm();
-    loadBoards();
-    
-    // Устанавливаем текущую доску и отображаем её
-    currentBoardId = boardId;
-    renderBoard(boards[boardId]);
+    try {
+        const boardId = 'board-' + Date.now();
+        const existingBoards = getBoards();
+        
+        const newBoard = {
+            id: boardId,
+            name: boardName,
+            owner: currentUser.id,
+            tasks: {},
+            columns: [
+                { id: `column-${boardId}-1`, title: 'К выполнению' },
+                { id: `column-${boardId}-2`, title: 'В процессе' },
+                { id: `column-${boardId}-3`, title: 'Готово' }
+            ]
+        };
+
+        // Инициализируем tasks
+        newBoard.columns.forEach(column => {
+            newBoard.tasks[column.id] = [];
+        });
+
+        // Сохраняем
+        existingBoards[boardId] = newBoard;
+        saveBoards(existingBoards);
+        
+        console.log('Создана новая доска:', newBoard);
+
+        // Обновляем интерфейс
+        currentBoardId = boardId;
+        updateBoardSelect();
+        displayBoard(boardId);
+
+        return boardId;
+    } catch (error) {
+        console.error('Ошибка при создании доски:', error);
+        alert('Произошла ошибка при создании доски');
+        return null;
+    }
 }
 
 // Изменяем функцию получения досок
@@ -209,17 +234,20 @@ function loadLastBoard() {
 
 // Модифицируем функцию switchBoard
 function switchBoard(boardId) {
-    if (!boardId) return;
-    
-    currentBoardId = boardId;
-    localStorage.setItem('lastBoardId', boardId);
-    
-    const boards = getBoards();
-    const board = boards[boardId];
-    if (board) {
-        document.getElementById('board-select').value = boardId;
-        renderBoard(board);
+    if (!boardId || boardId === '' || typeof boardId !== 'string') {
+        console.error('Некорректный ID доски для переключения:', boardId);
+        return;
     }
+
+    const boards = getBoards();
+    if (!boards[boardId]) {
+        console.error('Доска не найдена:', boardId);
+        return;
+    }
+
+    console.log('Переключение на доску:', boardId);
+    currentBoardId = boardId;
+    displayBoard(boardId);
 }
 
 // Функции для работы со столбцами
@@ -314,61 +342,83 @@ function editColumnTitle(columnId) {
 }
 
 // Функция рендеринга доски
-function renderBoard(board) {
-    const kanban = document.querySelector('.kanban');
-    kanban.innerHTML = '';
+function renderBoard(boardId) {
+    if (typeof boardId !== 'string') {
+        console.error('Некорректный тип boardId:', typeof boardId);
+        return;
+    }
+
+    console.log('Отображение доски:', boardId);
+    const boards = getBoards();
+    const board = boards[boardId];
+
+    if (!board) {
+        console.error('Доска не найдена:', boardId);
+        return;
+    }
+
+    const kanbanContainer = document.querySelector('.kanban');
+    kanbanContainer.innerHTML = '';
 
     board.columns.forEach(column => {
         const columnHTML = `
             <div class="column" id="${column.id}">
-                <div class="column-header">
-                    <h2 onclick="editColumnTitle('${column.id}')" class="column-title ${column.isDefault ? 'default-column' : ''}" 
-                        title="${column.isDefault ? 'Стандартный столбец' : 'Нажмите для редактирования'}">
-                        ${column.title}
-                    </h2>
-                    ${!column.isDefault ? `<button class="delete-column-btn" onclick="deleteColumnConfirm('${column.id}')">×</button>` : ''}
-                </div>
-                <div class="tasks" ondrop="drop(event)" ondragover="allowDrop(event)">
-                </div>
+                <h2>${column.title}</h2>
+                <div class="tasks" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
             </div>
         `;
-        kanban.insertAdjacentHTML('beforeend', columnHTML);
+        kanbanContainer.insertAdjacentHTML('beforeend', columnHTML);
+
+        // Загружаем задачи для колонки
+        const tasks = loadBoardTasks(boardId, column.id);
+        const tasksContainer = document.querySelector(`#${column.id} .tasks`);
+        
+        if (Array.isArray(tasks)) {
+            tasks.forEach(task => {
+                if (task) {
+                    const taskElement = createTaskElement(task);
+                    tasksContainer.appendChild(taskElement);
+                }
+            });
+        }
     });
 
-    loadBoardTasks(board.tasks);
+    // Обновляем select
+    const select = document.getElementById('board-select');
+    if (select) {
+        select.value = boardId;
+    }
 }
 
-function loadBoardTasks(tasks) {
-    for (const [columnId, columnTasks] of Object.entries(tasks)) {
-        const column = document.querySelector(`#${columnId} .tasks`);
-        columnTasks.forEach(task => {
-            const filesHTML = task.files && task.files.length > 0 
-                ? `<div class="task-files">
-                    ${task.files.map(file => `
-                        <div class="task-file">
-                            <a href="#" data-file-id="${file.id}" onclick="downloadFile('${file.id}', '${file.name}'); return false;">
-                                ${file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name}
-                            </a>
-                            <span class="file-size">${file.size}</span>
-                        </div>
-                    `).join('')}
-                   </div>`
-                : '';
-
-            const taskHTML = `
-                <div class="task" id="${task.id}" draggable="true" ondragstart="drag(event)">
-                    <div class="task-header">
-                        <button class="edit-btn" onclick="openEditForm('${task.id}')">✎</button>
-                        <button class="delete-btn" onclick="deleteTask(event)">×</button>
-                    </div>
-                    <h3>${task.title}</h3>
-                    <p>${task.description}</p>
-                    ${filesHTML}
-                </div>
-            `;
-            column.insertAdjacentHTML('beforeend', taskHTML);
-        });
+// Обновляем функцию loadBoardTasks
+function loadBoardTasks(boardId, columnId) {
+    if (typeof boardId !== 'string') {
+        console.error('boardId должен быть строкой:', boardId);
+        return [];
     }
+
+    if (!boardId || !columnId) {
+        console.error('Отсутствуют необходимые параметры:', { boardId, columnId });
+        return [];
+    }
+
+    const boards = getBoards();
+    const board = boards[boardId];
+
+    if (!board) {
+        console.error('Доска не найдена:', boardId);
+        return [];
+    }
+
+    if (!board.tasks) {
+        board.tasks = {};
+    }
+
+    if (!board.tasks[columnId]) {
+        board.tasks[columnId] = [];
+    }
+
+    return board.tasks[columnId];
 }
 
 // Функции для drag and drop
@@ -817,26 +867,32 @@ function loadUserBoards() {
 
 // Обновляем функцию updateBoardSelect
 function updateBoardSelect() {
-    if (!currentUser) {
-        console.error('Пользователь не авторизован при обновлении списка досок');
-        return;
-    }
+    const select = document.getElementById('board-select');
+    if (!select) return;
 
     const boards = getBoards();
-    const select = document.getElementById('board-select');
-    select.innerHTML = '<option value="">Выберите доску</option>';
-    
     console.log('Обновление списка досок:', boards);
     
-    Object.values(boards).forEach(board => {
+    // Сохраняем текущее значение
+    const currentValue = select.value;
+    
+    // Очищаем select
+    select.innerHTML = '';
+    
+    // Добавляем опции
+    Object.entries(boards).forEach(([id, board]) => {
         const option = document.createElement('option');
-        option.value = board.id;
+        option.value = id;
         option.textContent = board.name;
-        if (board.id === currentBoardId) {
-            option.selected = true;
-        }
         select.appendChild(option);
     });
+    
+    // Восстанавливаем выбранное значение
+    if (currentBoardId && boards[currentBoardId]) {
+        select.value = currentBoardId;
+    } else if (currentValue && boards[currentValue]) {
+        select.value = currentValue;
+    }
 }
 
 // Добавляем функцию очистки при выходе
@@ -846,75 +902,127 @@ function clearCurrentBoardData() {
     document.querySelector('.kanban').innerHTML = '';
 }
 
-// Обновляем функцию createBoard
-async function createBoard() {
-    if (!currentUser) {
-        console.error('Пользователь не авторизован при создании доски');
-        return;
+// Обновляем функцию initApp
+function initApp() {
+    console.log('Инициализация приложения...');
+    
+    // Удаляем и переустанавливаем обработчик кнопки создания доски
+    const createBtn = document.getElementById('create-board-btn');
+    if (createBtn) {
+        // Удаляем все существующие обработчики
+        const newBtn = createBtn.cloneNode(true);
+        createBtn.parentNode.replaceChild(newBtn, createBtn);
+        
+        // Добавляем единственный обработчик
+        newBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            createBoard();
+        });
     }
 
-    const boardName = prompt('Введите название доски:');
-    if (!boardName) {
-        console.log('Создание доски отменено пользователем');
-        return;
-    }
-
-    try {
-        const boardId = 'board-' + Date.now();
-        // Получаем текущие доски пользователя
-        const currentBoards = getBoards();
+    // Инициализация select
+    const select = document.getElementById('board-select');
+    if (select) {
+        const newSelect = select.cloneNode(true);
+        select.parentNode.replaceChild(newSelect, select);
         
-        // Создаем новую доску
-        const newBoard = {
-            id: boardId,
-            name: boardName,
-            owner: currentUser.id,
-            columns: [
-                {
-                    id: 'column-' + Date.now(),
-                    title: 'К выполнению'
-                },
-                {
-                    id: 'column-' + (Date.now() + 1),
-                    title: 'В процессе'
-                },
-                {
-                    id: 'column-' + (Date.now() + 2),
-                    title: 'Готово'
-                }
-            ]
-        };
-
-        // Добавляем новую доску к существующим
-        currentBoards[boardId] = newBoard;
-        
-        // Сохраняем обновленный список досок
-        saveBoards(currentBoards);
-        
-        console.log('Доска успешно создана:', newBoard);
-        console.log('Текущие доски:', currentBoards);
-
-        // Обновляем select и отображаем новую доску
-        currentBoardId = boardId;
-        updateBoardSelect();
-        
-        // Устанавливаем значение в select
-        const select = document.getElementById('board-select');
-        select.value = boardId;
-        
-        // Отображаем новую доску
-        displayBoard(boardId);
-    } catch (error) {
-        console.error('Ошибка при создании доски:', error);
-        alert('Произошла ошибка при создании доски');
+        newSelect.addEventListener('change', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const selectedId = this.value;
+            if (selectedId && selectedId !== '') {
+                currentBoardId = selectedId;
+                displayBoard(selectedId);
+            }
+        });
     }
 }
 
-// Добавляем обработчик изменения выбранной доски
-document.getElementById('board-select').addEventListener('change', function(e) {
-    const selectedBoardId = e.target.value;
-    if (selectedBoardId) {
-        currentBoardId = selectedBoardId;
-        displayBoard(selectedBoardId);
+// Обновляем функцию displayBoard
+function displayBoard(boardId) {
+    console.log('Отображение доски:', boardId);
+    
+    if (!boardId || typeof boardId !== 'string') {
+        console.error('Некорректный ID доски:', boardId);
+        return;
     }
-});
+
+    const boards = getBoards();
+    const board = boards[boardId];
+    
+    if (!board) {
+        console.error('Доска не найдена:', boardId);
+        return;
+    }
+
+    // Обновляем select
+    const select = document.getElementById('board-select');
+    if (select && select.value !== boardId) {
+        select.value = boardId;
+    }
+
+    // Очищаем и обновляем контейнер
+    const kanbanContainer = document.querySelector('.kanban');
+    kanbanContainer.innerHTML = '';
+    
+    // Отображаем колонки
+    board.columns.forEach(column => {
+        const columnHTML = `
+            <div class="column" id="${column.id}">
+                <h2>${column.title}</h2>
+                <div class="tasks" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+            </div>
+        `;
+        kanbanContainer.insertAdjacentHTML('beforeend', columnHTML);
+        
+        // Загружаем задачи
+        if (board.tasks && board.tasks[column.id]) {
+            const tasks = board.tasks[column.id];
+            const tasksContainer = document.querySelector(`#${column.id} .tasks`);
+            
+            tasks.forEach(task => {
+                if (task) {
+                    const taskElement = createTaskElement(task);
+                    tasksContainer.appendChild(taskElement);
+                }
+            });
+        }
+    });
+
+    // Сохраняем текущий ID доски
+    currentBoardId = boardId;
+    console.log('Доска отображена:', boardId);
+}
+
+// Добавляем вспомогательную функцию создания элемента задачи
+function createTaskElement(task) {
+    const div = document.createElement('div');
+    div.className = 'task';
+    div.id = task.id;
+    div.draggable = true;
+    div.ondragstart = drag;
+    
+    div.innerHTML = `
+        <button class="delete-btn" onclick="deleteTask(event)">×</button>
+        <button class="edit-btn" onclick="openEditForm('${task.id}')">✎</button>
+        <h3>${task.title}</h3>
+        <p>${task.description}</p>
+        ${task.files && task.files.length > 0 ? '<div class="task-files"></div>' : ''}
+    `;
+    
+    return div;
+}
+
+// Добавляем функцию для проверки состояния
+function debugState() {
+    const boards = getBoards();
+    console.log('=== Текущее состояние ===');
+    console.log('Текущий пользователь:', currentUser);
+    console.log('Текущая доска:', currentBoardId);
+    console.log('Доски в хранилище:', boards);
+    if (currentBoardId) {
+        console.log('Текущая доска существует:', !!boards[currentBoardId]);
+    }
+}

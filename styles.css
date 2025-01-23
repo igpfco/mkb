@@ -515,3 +515,20 @@ body {
     font-size: 13px;
     color: #5e6c84;
 }
+
+.new-board-btn {
+    background-color: #0056b3;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 10px;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.new-board-btn:hover {
+    background-color: #004494;
+}
