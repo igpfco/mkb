@@ -15,6 +15,7 @@ let db;
 // Добавляем переменные для редактирования
 let editingTaskId = null;
 let editingTaskFiles = [];
+let currentEditingTaskId = null;
 
 // Инициализация IndexedDB
 function initDB() {
@@ -344,7 +345,7 @@ function loadBoardTasks(tasks) {
             const taskHTML = `
                 <div class="task" id="${task.id}" draggable="true" ondragstart="drag(event)">
                     <div class="task-header">
-                        <button class="edit-btn" onclick="showEditForm('${task.id}')">✎</button>
+                        <button class="edit-btn" onclick="openEditForm('${task.id}')">✎</button>
                         <button class="delete-btn" onclick="deleteTask(event)">×</button>
                     </div>
                     <h3>${task.title}</h3>
@@ -410,6 +411,7 @@ async function addTask() {
     const taskHTML = `
         <div class="task" id="${taskId}" draggable="true" ondragstart="drag(event)">
             <button class="delete-btn" onclick="deleteTask(event)">×</button>
+            <button class="edit-btn" onclick="openEditForm('${taskId}')">✎</button>
             <h3>${title}</h3>
             <p>${description}</p>
             ${currentTaskFiles.length > 0 ? '<div class="task-files"></div>' : ''}
@@ -662,32 +664,14 @@ async function deleteAllBoardFiles(board) {
 }
 
 // Функция открытия формы редактирования
-function showEditForm(taskId) {
+function openEditForm(taskId) {
     const task = document.getElementById(taskId);
-    if (!task) return;
-
-    editingTaskId = taskId;
-    const title = task.querySelector('h3').innerText;
-    const description = task.querySelector('p').innerText;
+    const title = task.querySelector('h3').textContent;
+    const description = task.querySelector('p').textContent;
     
-    // Загружаем текущие файлы
-    editingTaskFiles = [];
-    const fileElements = task.querySelectorAll('.task-file');
-    fileElements.forEach(fileEl => {
-        const link = fileEl.querySelector('a');
-        editingTaskFiles.push({
-            id: link.dataset.fileId,
-            name: link.getAttribute('download'),
-            size: fileEl.querySelector('.file-size').textContent
-        });
-    });
-
-    // Заполняем форму
     document.getElementById('edit-task-title').value = title;
     document.getElementById('edit-task-description').value = description;
-    
-    // Отображаем текущие файлы
-    updateEditFileList();
+    currentEditingTaskId = taskId;
     
     document.getElementById('edit-task-form').style.display = 'block';
 }
@@ -695,101 +679,22 @@ function showEditForm(taskId) {
 // Функция закрытия формы редактирования
 function closeEditForm() {
     document.getElementById('edit-task-form').style.display = 'none';
-    document.getElementById('edit-task-title').value = '';
-    document.getElementById('edit-task-description').value = '';
     document.getElementById('edit-file-list').innerHTML = '';
-    editingTaskId = null;
-    editingTaskFiles = [];
+    currentEditingTaskId = null;
 }
 
-// Обработчик выбора файлов при редактировании
-async function handleEditFileSelect(event) {
-    const files = event.target.files;
+// Функция сохранения изменений
+function saveTaskEdit() {
+    if (!currentEditingTaskId) return;
     
-    for (const file of files) {
-        try {
-            const fileId = await saveFileToIndexedDB(file);
-            editingTaskFiles.push({
-                id: fileId,
-                name: file.name,
-                size: formatFileSize(file.size)
-            });
-            updateEditFileList();
-        } catch (error) {
-            console.error('Ошибка при сохранении файла:', error);
-            alert(`Ошибка при сохранении файла ${file.name}`);
-        }
-    }
-}
-
-// Обновление списка файлов в форме редактирования
-function updateEditFileList() {
-    const fileList = document.getElementById('edit-file-list');
-    fileList.innerHTML = '';
+    const task = document.getElementById(currentEditingTaskId);
+    const newTitle = document.getElementById('edit-task-title').value;
+    const newDescription = document.getElementById('edit-task-description').value;
     
-    editingTaskFiles.forEach(file => {
-        const fileItem = document.createElement('div');
-        fileItem.className = 'file-item';
-        fileItem.innerHTML = `
-            ${file.name}
-            <span class="file-size">${file.size}</span>
-            <button onclick="removeEditFile('${file.id}')">×</button>
-        `;
-        fileList.appendChild(fileItem);
-    });
-}
-
-// Удаление файла при редактировании
-function removeEditFile(fileId) {
-    editingTaskFiles = editingTaskFiles.filter(file => file.id !== fileId);
-    updateEditFileList();
-}
-
-// Сохранение изменений задачи
-async function updateTask() {
-    if (!editingTaskId) return;
-
-    const title = document.getElementById('edit-task-title').value.trim();
-    const description = document.getElementById('edit-task-description').value.trim();
+    if (newTitle.trim() === '') return;
     
-    if (!title) {
-        alert('Название задачи не может быть пустым');
-        return;
-    }
-
-    const task = document.getElementById(editingTaskId);
-    if (!task) return;
-
-    // Обновляем основную информацию
-    task.querySelector('h3').innerText = title;
-    task.querySelector('p').innerText = description;
-
-    // Обновляем файлы
-    let filesHTML = '';
-    if (editingTaskFiles.length > 0) {
-        filesHTML = `
-            <div class="task-files">
-                ${editingTaskFiles.map(file => `
-                    <div class="task-file">
-                        <a href="#" data-file-id="${file.id}" onclick="downloadFile('${file.id}', '${file.name}'); return false;">
-                            ${file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name}
-                        </a>
-                        <span class="file-size">${file.size}</span>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
-
-    // Обновляем секцию с файлами
-    let filesSection = task.querySelector('.task-files');
-    if (filesSection) {
-        filesSection.remove();
-    }
-    if (filesHTML) {
-        task.insertAdjacentHTML('beforeend', filesHTML);
-    }
-
+    task.querySelector('h3').textContent = newTitle;
+    task.querySelector('p').textContent = newDescription;
+    
     closeEditForm();
-    saveTasks();
 }
