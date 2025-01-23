@@ -22,47 +22,6 @@ body {
     align-items: flex-start;
 }
 
-.menu {
-    position: fixed;
-    left: 20px;
-    top: 20px;
-    width: 220px;
-    background: white;
-    padding: 15px;
-    border-radius: 3px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-    z-index: 100;
-}
-
-#board-select {
-    width: 100%;
-    margin-top: 8px;
-}
-
-.board-btn {
-    background: #0079bf;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 3px;
-    cursor: pointer;
-    width: 200px;
-}
-
-.board-btn:hover {
-    background: #026aa7;
-}
-
-.add-btn {
-    width: 200px;
-    padding: 10px;
-    background: #ebecf0;
-    border: none;
-    border-radius: 3px;
-    color: #172b4d;
-    cursor: pointer;
-}
-
 .column {
     flex: 0 0 300px;
     background: #ebecf0;
@@ -87,22 +46,39 @@ body {
 }
 
 .task {
+    position: relative;
     background: white;
-    border-radius: 3px;
     padding: 10px;
-    margin-bottom: 8px;
+    padding-right: 30px;
+    border-radius: 3px;
     box-shadow: 0 1px 0 rgba(9,30,66,.25);
+    margin-bottom: 8px;
+    cursor: move;
 }
 
 .task h3 {
-    margin: 0 0 8px 0;
     font-size: 14px;
+    margin-bottom: 5px;
 }
 
 .task p {
-    margin: 0;
-    font-size: 13px;
+    font-size: 12px;
     color: #5e6c84;
+}
+
+.add-btn {
+    width: 200px;
+    padding: 10px;
+    background: #ebecf0;
+    border: none;
+    border-radius: 3px;
+    color: #172b4d;
+    cursor: pointer;
+}
+
+.add-btn:hover {
+    background: rgba(9,30,66,.08);
+    color: #172b4d;
 }
 
 .modal {
@@ -149,6 +125,165 @@ body {
     color: #172b4d;
 }
 
+.menu {
+    position: fixed;
+    left: 20px;
+    top: 20px;
+    width: 220px;
+    background: white;
+    padding: 15px;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    z-index: 100;
+}
+
+.delete-btn {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    background: none;
+    border: none;
+    color: #5e6c84;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.delete-btn:hover {
+    background: #ffebe6;
+    color: #c9372c;
+}
+
+#board-select {
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px;
+    border-radius: 3px;
+    border: 1px solid #0079bf;
+    background: white;
+    font-size: 14px;
+    color: #172b4d;
+    cursor: pointer;
+}
+
+#board-select:focus {
+    outline: none;
+    border-color: #026aa7;
+}
+
+.board-btn {
+    background: #0079bf;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    width: 200px;
+}
+
+.board-btn:hover {
+    background: #026aa7;
+}
+
+/* Медиа-запросы для адаптивности */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .menu {
+        position: static;
+        width: auto;
+        margin-bottom: 20px;
+    }
+
+    .kanban {
+        margin-left: 0;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .column {
+        flex: none;
+        width: 100%;
+        max-height: none;
+    }
+
+    .modal-content {
+        width: 90%;
+        margin: 50px auto;
+    }
+    
+    #board-select,
+    .board-btn,
+    .add-btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+.file-upload {
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px dashed #ddd;
+    border-radius: 3px;
+}
+
+.file-list {
+    margin-top: 10px;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px;
+    background: #f4f5f7;
+    margin: 5px 0;
+    border-radius: 3px;
+}
+
+.file-item button {
+    padding: 2px 6px;
+    margin: 0;
+    background: #ff5f5f;
+}
+
+.task-files {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #ebecf0;
+}
+
+.task-file {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    background: #f4f5f7;
+    margin: 4px 0;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.task-file a {
+    color: #0052cc;
+    text-decoration: none;
+    margin-right: 10px;
+}
+
+.task-file button {
+    padding: 2px 6px;
+    font-size: 10px;
+    background: #ff5f5f;
+}
+
+.file-size {
+    color: #5e6c84;
+    font-size: 11px;
+    margin-left: 5px;
+}
+
 .delete-board-btn {
     background: #eb5a46;
     color: white;
@@ -161,6 +296,13 @@ body {
 
 .delete-board-btn:hover {
     background: #cf513d;
+}
+
+@media (max-width: 768px) {
+    .delete-board-btn {
+        width: 100%;
+        max-width: 300px;
+    }
 }
 
 .add-column-btn {
@@ -204,6 +346,13 @@ body {
     color: #c9372c;
 }
 
+@media (max-width: 768px) {
+    .add-column-btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
 .column-title {
     cursor: pointer;
     padding: 5px;
@@ -222,24 +371,86 @@ body {
     background: none;
 }
 
+/* Общие стили для всех кнопок */
+.board-btn,
+.delete-board-btn,
+.add-btn,
+.add-column-btn,
+.modal-content button,
+.delete-btn,
+.delete-column-btn {
+    background: #0079bf;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+
+/* Стили для кнопок в меню */
 .menu button {
     width: 100%;
     margin-bottom: 8px;
 }
 
-.task-files {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #ebecf0;
+/* Стили для кнопок удаления */
+.delete-board-btn,
+.delete-btn,
+.delete-column-btn {
+    background: #eb5a46;
 }
 
-.file-item {
-    display: flex;
-    align-items: center;
-    margin: 4px 0;
-    font-size: 12px;
+.delete-board-btn:hover,
+.delete-btn:hover,
+.delete-column-btn:hover {
+    background: #cf513d;
 }
 
+/* Ховер эффект для всех кнопок */
+.board-btn:hover,
+.add-btn:hover,
+.add-column-btn:hover,
+.modal-content button:hover {
+    background: #026aa7;
+}
+
+/* Специальные стили для кнопок удаления в задачах и столбцах */
+.delete-btn,
+.delete-column-btn {
+    padding: 2px 8px;
+    font-size: 16px;
+}
+
+/* Стили для кнопок в модальном окне */
+.modal-content button {
+    margin: 5px;
+    min-width: 100px;
+}
+
+.modal-content button:last-child {
+    background: #eb5a46;
+}
+
+.modal-content button:last-child:hover {
+    background: #cf513d;
+}
+
+/* Медиа-запросы для адаптивности */
+@media (max-width: 768px) {
+    .menu button {
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    .modal-content button {
+        width: calc(50% - 10px);
+        margin: 5px;
+    }
+}
+
+/* Стили для скроллбаров */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -257,40 +468,6 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
     background: #a1a1a1;
-}
-
-@media (max-width: 768px) {
-    body {
-        padding: 10px;
-    }
-
-    .menu {
-        position: static;
-        width: auto;
-        margin-bottom: 20px;
-    }
-
-    .kanban {
-        margin-left: 0;
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .column {
-        flex: none;
-        width: 100%;
-        max-height: none;
-    }
-
-    .modal-content {
-        width: 90%;
-        margin: 50px auto;
-    }
-
-    .add-column-btn {
-        width: 100%;
-        max-width: 300px;
-    }
 }
 
 /* Стили для кнопок редактирования */
@@ -334,83 +511,3 @@ body {
     font-size: 13px;
     color: #5e6c84;
 }
-
-/* Добавляем стили для тем Telegram */
-body.dark {
-    background-color: #1f1f1f;
-    color: #fff;
-}
-
-body.dark .column {
-    background: #2c2c2c;
-}
-
-body.dark .task {
-    background: #363636;
-    color: #fff;
-}
-
-body.dark .modal-content {
-    background: #2c2c2c;
-    color: #fff;
-}
-
-body.dark input,
-body.dark textarea {
-    background: #363636;
-    color: #fff;
-    border-color: #4a4a4a;
-}
-
-.error {
-    background-color: #ffebee;
-    color: #c62828;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 3px;
-    display: none;
-}
-
-.error.visible {
-    display: block;
-}
-
-/* Стили для отключенных элементов */
-.disabled {
-    opacity: 0.5;
-    pointer-events: none;
-}
-
-/* Индикатор загрузки */
-.loading {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    display: none;
-}
-
-.loading.visible {
-    display: flex;
-}
-
-/* Стили для select в задаче */
-.task .column-select {
-    padding: 4px;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-    font-size: 12px;
-    margin-right: 5px;
-}
-
-.task-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-} 

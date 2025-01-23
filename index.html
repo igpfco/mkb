@@ -2,34 +2,42 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Канбан Доска</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="styles.css">
-    <script async src="https://www.googletagmanager.com/gtag/js?id=YOUR_GA_ID"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'YOUR_GA_ID');
-    </script>
 </head>
 <body>
-    <div id="app-container">
-        <div class="menu">
-            <div class="user-info">
-                <span id="user-name"></span>
-            </div>
-            <button onclick="showBoardForm()" class="board-btn">+ Новая доска</button>
-            <button onclick="deleteBoardConfirm()" class="delete-board-btn">Удалить доску</button>
-            <button onclick="showForm()" class="add-btn">+ Добавить карточку</button>
-            <button onclick="showColumnForm()" class="add-column-btn">+ Добавить столбец</button>
-            <select id="board-select" onchange="switchBoard(this.value)">
-                <!-- Список досок будет добавлен динамически -->
-            </select>
+    <div class="menu">
+        <button onclick="showBoardForm()" class="board-btn">+ Новая доска</button>
+        <button onclick="deleteBoardConfirm()" class="delete-board-btn">Удалить доску</button>
+        <button onclick="showForm()" class="add-btn">+ Добавить карточку</button>
+        <button onclick="showColumnForm()" class="add-column-btn">+ Добавить столбец</button>
+        <select id="board-select" onchange="switchBoard(this.value)">
+            <!-- Список досок будет добавлен динамически -->
+        </select>
+    </div>
+
+    <!-- Форма создания новой доски -->
+    <div id="board-form" class="modal">
+        <div class="modal-content">
+            <h3>Новая доска</h3>
+            <input type="text" id="board-title" placeholder="Название доски">
+            <button onclick="addBoard()">Создать</button>
+            <button onclick="closeBoardForm()">Отмена</button>
         </div>
-        <div class="kanban">
-            <!-- Столбцы будут добавляться динамически -->
+    </div>
+
+    <div class="kanban">
+        <!-- Столбцы будут добавляться динамически -->
+    </div>
+
+    <!-- Форма добавления столбца -->
+    <div id="column-form" class="modal">
+        <div class="modal-content">
+            <h3>Новый столбец</h3>
+            <input type="text" id="column-title" placeholder="Название столбца">
+            <button onclick="addColumn()">Добавить</button>
+            <button onclick="closeColumnForm()">Отмена</button>
         </div>
     </div>
 
@@ -44,26 +52,6 @@
             </div>
             <button onclick="addTask()">Добавить</button>
             <button onclick="closeForm()">Отмена</button>
-        </div>
-    </div>
-
-    <!-- Форма создания новой доски -->
-    <div id="board-form" class="modal">
-        <div class="modal-content">
-            <h3>Новая доска</h3>
-            <input type="text" id="board-title" placeholder="Название доски">
-            <button onclick="addBoard()">Создать</button>
-            <button onclick="closeBoardForm()">Отмена</button>
-        </div>
-    </div>
-
-    <!-- Форма добавления столбца -->
-    <div id="column-form" class="modal">
-        <div class="modal-content">
-            <h3>Новый столбец</h3>
-            <input type="text" id="column-title" placeholder="Название столбца">
-            <button onclick="addColumn()">Добавить</button>
-            <button onclick="closeColumnForm()">Отмена</button>
         </div>
     </div>
 
@@ -84,4 +72,4 @@
 
     <script src="script.js"></script>
 </body>
-</html> 
+</html>
