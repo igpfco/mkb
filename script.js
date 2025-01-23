@@ -818,7 +818,7 @@ function loadUserBoards() {
 // Обновляем функцию updateBoardSelect
 function updateBoardSelect() {
     if (!currentUser) {
-        console.error('Пользователь не авторизован');
+        console.error('Пользователь не авторизован при обновлении списка досок');
         return;
     }
 
@@ -826,14 +826,16 @@ function updateBoardSelect() {
     const select = document.getElementById('board-select');
     select.innerHTML = '<option value="">Выберите доску</option>';
     
+    console.log('Обновление списка досок:', boards);
+    
     Object.values(boards).forEach(board => {
-        // Дополнительная проверка владельца доски
-        if (board.owner === currentUser.id) {
-            const option = document.createElement('option');
-            option.value = board.id;
-            option.textContent = board.name;
-            select.appendChild(option);
+        const option = document.createElement('option');
+        option.value = board.id;
+        option.textContent = board.name;
+        if (board.id === currentBoardId) {
+            option.selected = true;
         }
+        select.appendChild(option);
     });
 }
 
@@ -844,9 +846,12 @@ function clearCurrentBoardData() {
     document.querySelector('.kanban').innerHTML = '';
 }
 
-// Исправляем функцию createBoard
+// Обновляем функцию createBoard
 async function createBoard() {
-    console.log('Создание новой доски для пользователя:', currentUser);
+    if (!currentUser) {
+        console.error('Пользователь не авторизован при создании доски');
+        return;
+    }
 
     const boardName = prompt('Введите название доски:');
     if (!boardName) {
@@ -854,35 +859,62 @@ async function createBoard() {
         return;
     }
 
-    const boardId = 'board-' + Date.now();
-    const boards = getBoards();
-    
-    const newBoard = {
-        id: boardId,
-        name: boardName,
-        owner: currentUser.id,
-        columns: [
-            {
-                id: 'column-' + Date.now(),
-                title: 'К выполнению'
-            },
-            {
-                id: 'column-' + (Date.now() + 1),
-                title: 'В процессе'
-            },
-            {
-                id: 'column-' + (Date.now() + 2),
-                title: 'Готово'
-            }
-        ]
-    };
+    try {
+        const boardId = 'board-' + Date.now();
+        // Получаем текущие доски пользователя
+        const currentBoards = getBoards();
+        
+        // Создаем новую доску
+        const newBoard = {
+            id: boardId,
+            name: boardName,
+            owner: currentUser.id,
+            columns: [
+                {
+                    id: 'column-' + Date.now(),
+                    title: 'К выполнению'
+                },
+                {
+                    id: 'column-' + (Date.now() + 1),
+                    title: 'В процессе'
+                },
+                {
+                    id: 'column-' + (Date.now() + 2),
+                    title: 'Готово'
+                }
+            ]
+        };
 
-    boards[boardId] = newBoard;
-    console.log('Создана новая доска:', newBoard);
-    
-    saveBoards(boards);
-    updateBoardSelect();
-    
-    currentBoardId = boardId;
-    displayBoard(boardId);
+        // Добавляем новую доску к существующим
+        currentBoards[boardId] = newBoard;
+        
+        // Сохраняем обновленный список досок
+        saveBoards(currentBoards);
+        
+        console.log('Доска успешно создана:', newBoard);
+        console.log('Текущие доски:', currentBoards);
+
+        // Обновляем select и отображаем новую доску
+        currentBoardId = boardId;
+        updateBoardSelect();
+        
+        // Устанавливаем значение в select
+        const select = document.getElementById('board-select');
+        select.value = boardId;
+        
+        // Отображаем новую доску
+        displayBoard(boardId);
+    } catch (error) {
+        console.error('Ошибка при создании доски:', error);
+        alert('Произошла ошибка при создании доски');
+    }
 }
+
+// Добавляем обработчик изменения выбранной доски
+document.getElementById('board-select').addEventListener('change', function(e) {
+    const selectedBoardId = e.target.value;
+    if (selectedBoardId) {
+        currentBoardId = selectedBoardId;
+        displayBoard(selectedBoardId);
+    }
+});
