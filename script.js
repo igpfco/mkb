@@ -139,11 +139,22 @@ function addBoard() {
     renderBoard(boards[boardId]);
 }
 
-// Добавляем функцию для безопасного получения данных из localStorage
+// Изменяем функцию получения досок
 function getBoards() {
+    if (!currentUser) {
+        console.error('Пользователь не авторизован');
+        return {};
+    }
+    
     const userId = currentUser.id;
-    const boards = JSON.parse(localStorage.getItem(`boards_${userId}`) || '{}');
-    return boards;
+    try {
+        // Используем userId как часть ключа для хранения
+        const userBoards = localStorage.getItem(`kanban_boards_${userId}`);
+        return userBoards ? JSON.parse(userBoards) : {};
+    } catch (error) {
+        console.error('Ошибка при получении досок:', error);
+        return {};
+    }
 }
 
 // Модифицируем функцию loadBoards
@@ -707,27 +718,73 @@ function initTelegramApp() {
     currentUser = telegramWebApp.initDataUnsafe.user;
     
     if (!currentUser) {
-        alert('Ошибка авторизации');
+        alert('Ошибка авторизации в Telegram');
         return;
     }
     
+    console.log('Инициализация для пользователя:', currentUser.id);
+    clearCurrentBoardData(); // Очищаем данные предыдущего пользователя
     loadUserBoards();
-}
-
-// Изменяем функцию получения досок
-function getBoards() {
-    const userId = currentUser.id;
-    const boards = JSON.parse(localStorage.getItem(`boards_${userId}`) || '{}');
-    return boards;
 }
 
 // Изменяем функцию сохранения досок
 function saveBoards(boards) {
+    if (!currentUser) {
+        console.error('Пользователь не авторизован');
+        return;
+    }
+    
     const userId = currentUser.id;
-    localStorage.setItem(`boards_${userId}`, JSON.stringify(boards));
+    try {
+        // Сохраняем доски с уникальным ключом для каждого пользователя
+        localStorage.setItem(`kanban_boards_${userId}`, JSON.stringify(boards));
+    } catch (error) {
+        console.error('Ошибка при сохранении досок:', error);
+    }
 }
 
-// Изменяем функцию создания доски
+// Изменяем функцию загрузки досок пользователя
+function loadUserBoards() {
+    if (!currentUser) {
+        console.error('Пользователь не авторизован');
+        return;
+    }
+
+    const boards = getBoards();
+    console.log('Загружены доски пользователя:', currentUser.id, boards);
+    updateBoardSelect();
+}
+
+// Обновляем функцию updateBoardSelect
+function updateBoardSelect() {
+    if (!currentUser) {
+        console.error('Пользователь не авторизован');
+        return;
+    }
+
+    const boards = getBoards();
+    const select = document.getElementById('board-select');
+    select.innerHTML = '<option value="">Выберите доску</option>';
+    
+    Object.values(boards).forEach(board => {
+        // Дополнительная проверка владельца доски
+        if (board.owner === currentUser.id) {
+            const option = document.createElement('option');
+            option.value = board.id;
+            option.textContent = board.name;
+            select.appendChild(option);
+        }
+    });
+}
+
+// Добавляем функцию очистки при выходе
+function clearCurrentBoardData() {
+    currentBoardId = null;
+    currentColumn = null;
+    document.querySelector('.kanban').innerHTML = '';
+}
+
+// Добавляем функцию создания доски
 async function createBoard() {
     if (!currentUser) {
         alert('Необходимо авторизоваться');
@@ -754,26 +811,4 @@ async function createBoard() {
     
     saveBoards(boards);
     updateBoardSelect();
-}
-
-// Функция загрузки досок пользователя
-function loadUserBoards() {
-    const boards = getBoards();
-    updateBoardSelect();
-}
-
-// Обновляем существующую функцию updateBoardSelect
-function updateBoardSelect() {
-    const boards = getBoards();
-    const select = document.getElementById('board-select');
-    select.innerHTML = '<option value="">Выберите доску</option>';
-    
-    Object.values(boards).forEach(board => {
-        if (board.owner === currentUser.id) {
-            const option = document.createElement('option');
-            option.value = board.id;
-            option.textContent = board.name;
-            select.appendChild(option);
-        }
-    });
 }
