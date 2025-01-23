@@ -723,7 +723,7 @@ function initTelegramApp() {
     }
     
     console.log('Инициализация для пользователя:', currentUser.id);
-    clearCurrentBoardData(); // Очищаем данные предыдущего пользователя
+    clearCurrentBoardData();
     loadUserBoards();
 }
 
@@ -743,16 +743,56 @@ function saveBoards(boards) {
     }
 }
 
-// Изменяем функцию загрузки досок пользователя
+// Добавляем функцию создания доски по умолчанию
+function createDefaultBoard() {
+    const defaultBoard = {
+        id: 'board-' + Date.now(),
+        name: 'Моя первая доска',
+        owner: currentUser.id,
+        columns: [
+            {
+                id: 'column-' + Date.now(),
+                title: 'К выполнению'
+            },
+            {
+                id: 'column-' + (Date.now() + 1),
+                title: 'В процессе'
+            },
+            {
+                id: 'column-' + (Date.now() + 2),
+                title: 'Готово'
+            }
+        ]
+    };
+
+    const boards = {};
+    boards[defaultBoard.id] = defaultBoard;
+    saveBoards(boards);
+    return defaultBoard.id;
+}
+
+// Обновляем функцию loadUserBoards
 function loadUserBoards() {
     if (!currentUser) {
         console.error('Пользователь не авторизован');
         return;
     }
 
-    const boards = getBoards();
-    console.log('Загружены доски пользователя:', currentUser.id, boards);
+    let boards = getBoards();
+    
+    // Если у пользователя нет досок, создаем доску по умолчанию
+    if (Object.keys(boards).length === 0) {
+        const defaultBoardId = createDefaultBoard();
+        boards = getBoards();
+        currentBoardId = defaultBoardId;
+    }
+
     updateBoardSelect();
+    
+    // Если есть текущая доска, отображаем её
+    if (currentBoardId && boards[currentBoardId]) {
+        displayBoard(currentBoardId);
+    }
 }
 
 // Обновляем функцию updateBoardSelect
@@ -784,7 +824,7 @@ function clearCurrentBoardData() {
     document.querySelector('.kanban').innerHTML = '';
 }
 
-// Добавляем функцию создания доски
+// Исправляем функцию createBoard
 async function createBoard() {
     if (!currentUser) {
         alert('Необходимо авторизоваться');
@@ -805,10 +845,22 @@ async function createBoard() {
             {
                 id: 'column-' + Date.now(),
                 title: 'К выполнению'
+            },
+            {
+                id: 'column-' + (Date.now() + 1),
+                title: 'В процессе'
+            },
+            {
+                id: 'column-' + (Date.now() + 2),
+                title: 'Готово'
             }
         ]
     };
     
     saveBoards(boards);
     updateBoardSelect();
+    
+    // Устанавливаем новую доску как текущую и отображаем её
+    currentBoardId = boardId;
+    displayBoard(boardId);
 }
