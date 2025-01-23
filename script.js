@@ -173,7 +173,7 @@ function getBoards() {
     
     const userId = currentUser.id;
     try {
-        const userBoards = localStorage.getItem(`kanban_boards_${userId}`);
+        const userBoards = localStorage.getItem(`boards_${userId}`);
         const boards = userBoards ? JSON.parse(userBoards) : {};
         console.log(`Получены доски для пользователя ${userId}:`, boards);
         return boards;
@@ -668,28 +668,61 @@ function deleteBoardConfirm() {
     }
 }
 
-// Функция удаления доски
-async function deleteBoard(boardId) {
+// Обновляем функцию deleteBoard
+async function deleteBoard() {
+    if (!currentUser) {
+        console.error('Пользователь не авторизован');
+        return;
+    }
+
+    if (!currentBoardId) {
+        console.error('Не выбрана доска для удаления');
+        alert('Пожалуйста, выберите доску для удаления');
+        return;
+    }
+
     try {
         const boards = getBoards();
-        
-        // Удаляем все файлы, связанные с задачами этой доски
-        await deleteAllBoardFiles(boards[boardId]);
-        
-        // Удаляем доску из хранилища
-        delete boards[boardId];
-        localStorage.setItem('kanbanBoards', JSON.stringify(boards));
-
-        // Если удалили текущую доску, переключаемся на первую доступную
-        if (boardId === currentBoardId) {
-            const firstBoardId = Object.keys(boards)[0];
-            currentBoardId = firstBoardId;
-            localStorage.setItem('lastBoardId', firstBoardId);
+        if (!boards[currentBoardId]) {
+            console.error('Доска не найдена:', currentBoardId);
+            return;
         }
 
-        // Перезагружаем список досок и отображение
-        loadBoards();
-        switchBoard(currentBoardId);
+        // Подтверждение удаления
+        if (!confirm('Вы уверены, что хотите удалить эту доску?')) {
+            return;
+        }
+
+        // Удаляем доску
+        delete boards[currentBoardId];
+        saveBoards(boards);
+
+        console.log('Удалена доска:', currentBoardId);
+
+        // Находим следующую доску для отображения
+        const remainingBoardIds = Object.keys(boards);
+        if (remainingBoardIds.length > 0) {
+            currentBoardId = remainingBoardIds[0];
+            console.log('Переключение на доску:', currentBoardId);
+        } else {
+            currentBoardId = null;
+            console.log('Нет доступных досок');
+        }
+
+        // Обновляем интерфейс
+        updateBoardSelect();
+        
+        // Если есть доска для отображения, показываем её
+        if (currentBoardId) {
+            displayBoard(currentBoardId);
+        } else {
+            // Очищаем контейнер канбан-доски
+            const kanbanContainer = document.querySelector('.kanban');
+            if (kanbanContainer) {
+                kanbanContainer.innerHTML = '';
+            }
+        }
+
     } catch (error) {
         console.error('Ошибка при удалении доски:', error);
         alert('Произошла ошибка при удалении доски');
@@ -793,19 +826,20 @@ function initTelegramApp() {
     }
 }
 
-// Изменяем функцию сохранения досок
+// Обновляем функцию сохранения досок
 function saveBoards(boards) {
     if (!currentUser) {
-        console.error('Пользователь не авторизован при попытке сохранения досок');
+        console.error('Нет текущего пользователя для сохранения досок');
         return;
     }
-    
-    const userId = currentUser.id;
+
     try {
-        localStorage.setItem(`kanban_boards_${userId}`, JSON.stringify(boards));
-        console.log(`Сохранены доски для пользователя ${userId}:`, boards);
+        const boardsData = JSON.stringify(boards);
+        localStorage.setItem(`boards_${currentUser.id}`, boardsData);
+        console.log('Сохранены доски для пользователя', currentUser.id, ':', boards);
     } catch (error) {
         console.error('Ошибка при сохранении досок:', error);
+        throw error;
     }
 }
 
