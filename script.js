@@ -911,7 +911,44 @@ async function updateTask() {
     saveTasks();
 }
 
-// Функция рендеринга доски
+// Функция для отрисовки задачи
+function renderTask(task) {
+    return `
+        <div class="task" id="${task.id}">
+            <div class="task-header">
+                <select class="column-select" onchange="moveTask('${task.id}', this.value)">
+                    ${getColumnOptions()}
+                </select>
+                <button class="edit-btn" onclick="showEditForm('${task.id}')">✎</button>
+                <button class="delete-btn" onclick="deleteTask(event)">×</button>
+            </div>
+            <h3>${task.title}</h3>
+            <p>${task.description}</p>
+            ${task.files ? renderTaskFiles(task.files) : ''}
+        </div>
+    `;
+}
+
+// Получение списка опций для select
+function getColumnOptions() {
+    const boards = getBoards();
+    const board = boards[currentBoardId];
+    return board.columns.map(column => 
+        `<option value="${column.id}">${column.title}</option>`
+    ).join('');
+}
+
+// Функция перемещения задачи
+function moveTask(taskId, columnId) {
+    const task = document.getElementById(taskId);
+    const targetColumn = document.querySelector(`#${columnId} .tasks`);
+    if (task && targetColumn) {
+        targetColumn.appendChild(task);
+        saveTasks();
+    }
+}
+
+// Обновляем функцию renderBoard
 function renderBoard(board) {
     const kanban = document.querySelector('.kanban');
     kanban.innerHTML = '';
@@ -920,24 +957,23 @@ function renderBoard(board) {
         const columnHTML = `
             <div class="column" id="${column.id}">
                 <div class="column-header">
-                    <h2 onclick="editColumnTitle('${column.id}')" class="column-title ${column.isDefault ? 'default-column' : ''}" 
+                    <h2 class="column-title ${column.isDefault ? 'default-column' : ''}"
+                        ${!column.isDefault ? 'onclick="editColumnTitle(\'' + column.id + '\')"' : ''}
                         title="${column.isDefault ? 'Стандартный столбец' : 'Нажмите для редактирования'}">
                         ${column.title}
                     </h2>
-                    ${!column.isDefault ? `<button class="delete-column-btn" onclick="deleteColumnConfirm('${column.id}')">×</button>` : ''}
+                    ${!column.isDefault ? 
+                        `<button class="delete-column-btn" onclick="deleteColumnConfirm('${column.id}')">×</button>` 
+                        : ''}
                 </div>
-                <div class="tasks" ondrop="drop(event)" ondragover="allowDrop(event)">
-                </div>
+                <div class="tasks"></div>
             </div>
         `;
         kanban.insertAdjacentHTML('beforeend', columnHTML);
     });
 
+    // Загружаем задачи
     loadBoardTasks(board.tasks);
-
-    if (!isDragAndDropSupported) {
-        enableTouchControls();
-    }
 }
 
 function checkBrowserSupport() {

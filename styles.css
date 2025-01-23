@@ -398,4 +398,19 @@ body.dark textarea {
 
 .loading.visible {
     display: flex;
+}
+
+/* Стили для select в задаче */
+.task .column-select {
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 12px;
+    margin-right: 5px;
+}
+
+.task-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
 } 
