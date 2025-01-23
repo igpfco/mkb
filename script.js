@@ -17,6 +17,9 @@ let editingTaskId = null;
 let editingTaskFiles = [];
 let currentEditingTaskId = null;
 
+let telegramWebApp;
+let currentUser;
+
 // Инициализация IndexedDB
 function initDB() {
     return new Promise((resolve, reject) => {
@@ -43,6 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initializeStorage();
     loadBoards();
     loadLastBoard();
+    initTelegramApp();
 });
 
 // Функция сохранения файла в IndexedDB
@@ -137,12 +141,9 @@ function addBoard() {
 
 // Добавляем функцию для безопасного получения данных из localStorage
 function getBoards() {
-    try {
-        return JSON.parse(localStorage.getItem('kanbanBoards')) || {};
-    } catch (e) {
-        console.error('Ошибка чтения данных:', e);
-        return {};
-    }
+    const userId = currentUser.id;
+    const boards = JSON.parse(localStorage.getItem(`boards_${userId}`) || '{}');
+    return boards;
 }
 
 // Модифицируем функцию loadBoards
@@ -697,4 +698,82 @@ function saveTaskEdit() {
     task.querySelector('p').textContent = newDescription;
     
     closeEditForm();
+}
+
+// Инициализация Telegram Web App
+function initTelegramApp() {
+    telegramWebApp = window.Telegram.WebApp;
+    telegramWebApp.ready();
+    currentUser = telegramWebApp.initDataUnsafe.user;
+    
+    if (!currentUser) {
+        alert('Ошибка авторизации');
+        return;
+    }
+    
+    loadUserBoards();
+}
+
+// Изменяем функцию получения досок
+function getBoards() {
+    const userId = currentUser.id;
+    const boards = JSON.parse(localStorage.getItem(`boards_${userId}`) || '{}');
+    return boards;
+}
+
+// Изменяем функцию сохранения досок
+function saveBoards(boards) {
+    const userId = currentUser.id;
+    localStorage.setItem(`boards_${userId}`, JSON.stringify(boards));
+}
+
+// Изменяем функцию создания доски
+async function createBoard() {
+    if (!currentUser) {
+        alert('Необходимо авторизоваться');
+        return;
+    }
+
+    const boardName = prompt('Введите название доски:');
+    if (!boardName) return;
+
+    const boardId = 'board-' + Date.now();
+    const boards = getBoards();
+    
+    boards[boardId] = {
+        id: boardId,
+        name: boardName,
+        owner: currentUser.id,
+        columns: [
+            {
+                id: 'column-' + Date.now(),
+                title: 'К выполнению'
+            }
+        ]
+    };
+    
+    saveBoards(boards);
+    updateBoardSelect();
+}
+
+// Функция загрузки досок пользователя
+function loadUserBoards() {
+    const boards = getBoards();
+    updateBoardSelect();
+}
+
+// Обновляем существующую функцию updateBoardSelect
+function updateBoardSelect() {
+    const boards = getBoards();
+    const select = document.getElementById('board-select');
+    select.innerHTML = '<option value="">Выберите доску</option>';
+    
+    Object.values(boards).forEach(board => {
+        if (board.owner === currentUser.id) {
+            const option = document.createElement('option');
+            option.value = board.id;
+            option.textContent = board.name;
+            select.appendChild(option);
+        }
+    });
 }
