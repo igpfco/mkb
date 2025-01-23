@@ -1,0 +1,401 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.kanban {
+    display: flex;
+    gap: 20px;
+    margin-left: 260px;
+    padding: 20px 0;
+    overflow-x: auto;
+    min-height: calc(100vh - 40px);
+    align-items: flex-start;
+}
+
+.menu {
+    position: fixed;
+    left: 20px;
+    top: 20px;
+    width: 220px;
+    background: white;
+    padding: 15px;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    z-index: 100;
+}
+
+#board-select {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.board-btn {
+    background: #0079bf;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    width: 200px;
+}
+
+.board-btn:hover {
+    background: #026aa7;
+}
+
+.add-btn {
+    width: 200px;
+    padding: 10px;
+    background: #ebecf0;
+    border: none;
+    border-radius: 3px;
+    color: #172b4d;
+    cursor: pointer;
+}
+
+.column {
+    flex: 0 0 300px;
+    background: #ebecf0;
+    border-radius: 3px;
+    padding: 10px;
+    max-height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
+}
+
+.column h2 {
+    padding: 10px;
+    font-size: 16px;
+    color: #172b4d;
+}
+
+.tasks {
+    overflow-y: auto;
+    flex-grow: 1;
+    min-height: 100px;
+    padding: 5px;
+}
+
+.task {
+    background: white;
+    border-radius: 3px;
+    padding: 10px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 0 rgba(9,30,66,.25);
+}
+
+.task h3 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+}
+
+.task p {
+    margin: 0;
+    font-size: 13px;
+    color: #5e6c84;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 3px;
+    width: 400px;
+    margin: 100px auto;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.modal-content input,
+.modal-content textarea {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.modal-content button {
+    padding: 8px 16px;
+    margin: 5px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    background: #0079bf;
+    color: white;
+}
+
+.modal-content button:last-child {
+    background: #ebecf0;
+    color: #172b4d;
+}
+
+.delete-board-btn {
+    background: #eb5a46;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    width: 200px;
+}
+
+.delete-board-btn:hover {
+    background: #cf513d;
+}
+
+.add-column-btn {
+    background: #61bd4f;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    width: 200px;
+}
+
+.add-column-btn:hover {
+    background: #519839;
+}
+
+.column-header {
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.column-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.delete-column-btn {
+    background: none;
+    border: none;
+    color: #6b778c;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+
+.delete-column-btn:hover {
+    background: #ffebe6;
+    color: #c9372c;
+}
+
+.column-title {
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+.column-title:hover {
+    background: rgba(9,30,66,0.08);
+}
+
+.column-title.default-column {
+    cursor: default;
+}
+
+.column-title.default-column:hover {
+    background: none;
+}
+
+.menu button {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.task-files {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #ebecf0;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    margin: 4px 0;
+    font-size: 12px;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .menu {
+        position: static;
+        width: auto;
+        margin-bottom: 20px;
+    }
+
+    .kanban {
+        margin-left: 0;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .column {
+        flex: none;
+        width: 100%;
+        max-height: none;
+    }
+
+    .modal-content {
+        width: 90%;
+        margin: 50px auto;
+    }
+
+    .add-column-btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+/* Стили для кнопок редактирования */
+.task-header {
+    display: flex;
+    justify-content: flex-end;
+    gap: 5px;
+    margin-bottom: 8px;
+}
+
+.edit-btn {
+    background: #0079bf;
+    color: white;
+    border: none;
+    padding: 2px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.edit-btn:hover {
+    background: #026aa7;
+}
+
+/* Обновленные стили для задачи */
+.task {
+    background: white;
+    border-radius: 3px;
+    padding: 10px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 0 rgba(9,30,66,.25);
+}
+
+.task h3 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+}
+
+.task p {
+    margin: 0;
+    font-size: 13px;
+    color: #5e6c84;
+}
+
+/* Добавляем стили для тем Telegram */
+body.dark {
+    background-color: #1f1f1f;
+    color: #fff;
+}
+
+body.dark .column {
+    background: #2c2c2c;
+}
+
+body.dark .task {
+    background: #363636;
+    color: #fff;
+}
+
+body.dark .modal-content {
+    background: #2c2c2c;
+    color: #fff;
+}
+
+body.dark input,
+body.dark textarea {
+    background: #363636;
+    color: #fff;
+    border-color: #4a4a4a;
+}
+
+.error {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 3px;
+    display: none;
+}
+
+.error.visible {
+    display: block;
+}
+
+/* Стили для отключенных элементов */
+.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Индикатор загрузки */
+.loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    display: none;
+}
+
+.loading.visible {
+    display: flex;
+} 

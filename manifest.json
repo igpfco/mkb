@@ -1,0 +1,30 @@
+{
+    "name": "Kanban Board",
+    "short_name": "Kanban",
+    "description": "Simple Kanban board for Telegram Mini Apps",
+    "version": "1.0.0",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#0088cc",
+    "telegram_app_url": "https://t.me/my_kanban_bot",
+    "author": {
+        "name": "---",
+        "telegram": "@---"
+    },
+    "icons": [
+        {
+            "src": "icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
